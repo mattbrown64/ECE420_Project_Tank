@@ -9,11 +9,11 @@ def roam():
     #record pol time for each echo
 
     #Find front distance
-    front_distance = 0
+    front_distance = 30 #Placeholder value
     #Find Left distance
-    left_distance = 0
+    left_distance = 20 #Placeholder value
     #Find Right distance
-    right_distance = 0
+    right_distance = 10 #Placeholder value
 
     if front_distance > THRESHOLD_DISTANCE:
         return "Forward"
