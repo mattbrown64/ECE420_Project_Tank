@@ -1,10 +1,12 @@
-from roam import roam
+from roam import roam, setup
 from move import move
 import time
+import RPi.GPIO as GPIO
 
 def main():
     target_found = False  # Initialize camera
-    wait_time = 0.1  # Time to wait between movements
+    wait_time = 2  # Time to wait between movements
+    setup()  # Initialize GPIO pins for roaming sensors
     while True:
         # Check camera for target
         if target_found:
@@ -30,4 +32,10 @@ def main():
         time.sleep(wait_time)
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\nStopping measurements...")
+    finally:
+        GPIO.cleanup()
+        print("GPIO cleanup complete")
