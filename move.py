@@ -1,23 +1,28 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 def move(direction):
     match direction:
         case "Forward":
-            print("Moving forward")
+            logger.info("Moving forward")
             return 0
             # Code to move forward
         case "Left":
-            print("Turning left")
+            logger.info("Turning left")
             return 0
             # Code to turn left
         case "Right":
-            print("Turning right")
+            logger.info("Turning right")
             return 0
             # Code to turn right
         case "Reverse":
-            print("Reversing")
+            logger.info("Reversing")
             return 0
             # Code to reverse
         case _:
-            print("Unknown direction")
+            logger.warning("Unknown direction: %s", direction)
             # Handle unknown direction
     return -1  
         
