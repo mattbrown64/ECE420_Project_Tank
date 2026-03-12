@@ -1,15 +1,36 @@
-import qrcode
-code = qrcode.make('Friend!')
-code.save("qrcode_friend.png")
+import cv2
+from pyzbar.pyzbar import decode
+
+cap = cv2.VideoCapture(0)
+
+print("Scanning for QR codes... Press 'q' to quit.")
+
+while True:
+    success, frame = cap.read()
+    if not success:
+        break
 
 
-code = qrcode.make('Enemy!')
-code.save("qrcode_enemy.png")
+    for code in decode(frame):
 
+        data = code.data.decode('utf-8')
+        
 
-code = qrcode.make('BiggerEnemy!')
-code.save("qrcode_bigger_enemy.png")
+        if data == 'Friend!':
+            print("Welcome, buddy! 🤝")
+        elif data == 'Enemy!':
+            print("Intruder alert! 🛡️")
+        elif data == 'BiggerEnemy!':
+            print("RUN! It's a boss fight! 🐉")
+        elif data == 'Lover!':
+            print("Heart eyes only. 😍")
+        else:
+            print(f"Unknown code detected: {data}")
 
+    cv2.imshow('PiScan', frame)
 
-code = qrcode.make('Lover!')
-code.save("qrcode_lover.png")
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
