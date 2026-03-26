@@ -5,65 +5,12 @@ from pyzbar import pyzbar
 import time
 
 
-def Capture(file_path='capture.jpg'):
-    """Capture one image frame from Raspberry Pi camera using picamera2.
-
-    Overwrites existing file. Raises RuntimeError on any failure.
-    """
-
-    try:
-        picam = Picamera2()
-    except Exception as e:
-        raise RuntimeError(f'Failed to initialize Picamera2: {e}')
-
-    try:
-        config = picam.create_still_configuration(main={'size': (1280, 720)})
-        picam.configure(config)
-        picam.start()
-
-        # Allow auto exposure/white balance to stabilize
-        time.sleep(0.5)
-
-        frame = picam.capture_array()
-    except Exception as e:
-        raise RuntimeError(f'Failed to capture frame from Picamera2: {e}')
-    finally:
-        try:
-            picam.stop()
-        except Exception:
-            pass
-        try:
-            picam.close()
-        except Exception:
-            pass
-
+def detect_qr_from_frame(frame):
+    """Detect QR codes in an OpenCV frame (BGR)."""
     if frame is None or frame.size == 0:
-        raise RuntimeError('Failed to capture valid frame from Picamera2')
+        return []
 
-    # picamera2 returns RGB, OpenCV writes BGR.
-    try:
-        bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-    except Exception as e:
-        raise RuntimeError(f'Failed to convert captured frame to BGR: {e}')
-
-    ok = cv2.imwrite(file_path, bgr)
-    if not ok:
-        raise RuntimeError(f'Failed to write image to "{file_path}"')
-
-    return file_path
-
-
-def Detect(file_path='capture.jpg'):
-    """Detect QR codes in an image file.
-
-    Returns a list of decoded QR data strings. If no QR codes are found, returns an empty list.
-    Raises FileNotFoundError if the image cannot be loaded.
-    """
-    img = cv2.imread(file_path)
-    if img is None:
-        raise FileNotFoundError(f'Cannot load image from "{file_path}"')
-
-    decoded = pyzbar.decode(img)
+    decoded = pyzbar.decode(frame)
     qr_strings = []
     for barcode in decoded:
         if barcode.type != 'QRCODE':
@@ -73,18 +20,84 @@ def Detect(file_path='capture.jpg'):
     return qr_strings
 
 
-def Camera(file_path='capture.jpg'):
-    """Capture an image and detect QR codes in it.
+class CameraObject:
+    def __init__(self, size=(1280, 720), warmup=0.5):
+        self.picam = None
+        self.size = size
+        self.warmup = warmup
 
-    Returns the same list of detection dicts as Detect().
-    """
-    Capture(file_path)
-    return Detect(file_path)
+        try:
+            self.picam = Picamera2()
+            config = self.picam.create_still_configuration(main={'size': self.size})
+            self.picam.configure(config)
+            self.picam.start()
+            time.sleep(self.warmup)
+        except Exception as e:
+            self.close()
+            raise RuntimeError(f'Failed to initialize Camera: {e}')
+
+    def read_frame(self, save_path=None):
+        if self.picam is None:
+            raise RuntimeError('Camera is not initialized')
+
+        frame = self.picam.capture_array()
+        if frame is None or frame.size == 0:
+            raise RuntimeError('Failed to capture frame from camera')
+
+        try:
+            bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+        except Exception as e:
+            raise RuntimeError(f'Failed to convert frame to BGR: {e}')
+
+        if save_path:
+            ok = cv2.imwrite(save_path, bgr)
+            if not ok:
+                raise RuntimeError(f'Failed to write image to "{save_path}"')
+
+        return bgr
+
+    def read_qr(self, save_path=None):
+        frame = self.read_frame(save_path=save_path)
+        return detect_qr_from_frame(frame)
+
+    def close(self):
+        if self.picam is not None:
+            try:
+                self.picam.stop()
+            except Exception:
+                pass
+            try:
+                self.picam.close()
+            except Exception:
+                pass
+            self.picam = None
+
+
+def Capture(file_path='capture.jpg'):
+    """Legacy single-capture path (writes image to disk)."""
+    camera = CameraObject()
+    try:
+        frame = camera.read_frame(save_path=file_path)
+    finally:
+        camera.close()
+
+    return file_path
+
+
+def Detect(file_path='capture.jpg'):
+    """Detect QR codes in an image file."""
+    img = cv2.imread(file_path)
+    if img is None:
+        raise FileNotFoundError(f'Cannot load image from "{file_path}"')
+
+    return detect_qr_from_frame(img)
 
 
 if __name__ == '__main__':
+    camera = None
     try:
-        detections = Camera('capture.jpg')
+        camera = CameraObject()
+        detections = camera.read_qr(save_path='capture.jpg')
         print('Captured image and ran QR detection.')
 
         if detections:
@@ -93,4 +106,7 @@ if __name__ == '__main__':
             print('No QR code detected in image.')
     except Exception as e:
         print('Camera operation failed:', e)
+    finally:
+        if camera is not None:
+            camera.close()
 
