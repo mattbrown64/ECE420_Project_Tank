@@ -3,37 +3,6 @@ import numpy as np
 from picamera2 import Picamera2
 from pyzbar import pyzbar
 import time
-from Location import qr_location_from_frame
-
-
-def detect_qr_info_from_frame(frame):
-    """Detect QR codes with both data and location in an OpenCV frame (BGR)."""
-    if frame is None or frame.size == 0:
-        return []
-
-    decoded = pyzbar.decode(frame)
-    qr_info = []
-    for barcode in decoded:
-        if barcode.type != 'QRCODE':
-            continue
-        data = barcode.data.decode('utf-8', errors='replace')
-        rect = barcode.rect
-        x1, y1 = rect.left, rect.top
-        x2, y2 = rect.left + rect.width, rect.top + rect.height
-        center_x = (x1 + x2) / 2
-        center_y = (y1 + y2) / 2
-        qr_info.append({
-            'data': data,
-            'location': {
-                'top_left': (x1, y1),
-                'bottom_right': (x2, y2),
-                'center': (center_x, center_y),
-                'width': rect.width,
-                'height': rect.height
-            }
-        })
-
-    return qr_info
 
 
 class CameraObject:
@@ -74,7 +43,7 @@ class CameraObject:
 
     def read_qr(self, save_path=None):
         frame = self.read_frame(save_path=save_path)
-        return detect_qr_from_frame(frame)
+        return detect_qr_info_from_frame(frame)
 
     def close(self):
         if self.picam is not None:
@@ -87,6 +56,29 @@ class CameraObject:
             except Exception:
                 pass
             self.picam = None
+            
+def detect_qr_info_from_frame(frame):
+    """Detect QR codes with both data and location in an OpenCV frame (BGR)."""
+    if frame is None or frame.size == 0:
+        return []
+    decoded = pyzbar.decode(frame)
+    qr_info = []
+    for barcode in decoded:
+        if barcode.type != 'QRCODE':
+            continue
+        data = barcode.data.decode('utf-8', errors='replace')
+        rect = barcode.rect
+        x1, y1 = rect.left, rect.top
+        x2, y2 = rect.left + rect.width, rect.top + rect.height
+        center_x = (x1 + x2) / 2
+        center_y = (y1 + y2) / 2
+        qr_info.append({
+            'data': data,
+            'location': {
+                'center': (center_x, center_y),
+            }
+        })
+    return qr_info
 
 
 def Capture(file_path='capture.jpg'):
@@ -104,22 +96,18 @@ def Detect(file_path='capture.jpg'):
     if img is None:
         raise FileNotFoundError(f'Cannot load image from "{file_path}"')
 
-    return detect_qr_from_frame(img)
+    return detect_qr_info_from_frame(img)
 
 
 if __name__ == '__main__':
     camera = None
     try:
         camera = CameraObject()
-        location = qr_location_from_frame()
         detections = camera.read_qr(save_path='capture.jpg')
         print('Captured image and ran QR detection.')
 
         if detections:
             print(f'QR code detected: {detections}')
-        if location:
-            for qr in location:
-                print(f"QR code location: {qr}")
         else:
             print('No QR code detected in image.')
     except Exception as e:
