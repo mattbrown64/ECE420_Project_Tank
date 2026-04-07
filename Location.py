@@ -34,7 +34,7 @@ if __name__ == '__main__':
     try:
         img = cv2.imread('capture.jpg')
         if img is None:
-            print('Failed to load qrcodeinspace.jpg')
+            print('Failed to load capture.jpg')
         else:
             qr_locations = qr_location_from_frame(img)
             print('Captured image and ran QR location detection.')
