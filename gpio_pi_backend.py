@@ -55,6 +55,12 @@ def check_sensor(trigger_pin, sensor_pin):
     return distance
 
 
+def setup_motor_pwm(pin, frequency=100):
+    GPIO = _get_gpio_module()
+    GPIO.setup(pin, GPIO.OUT)
+    return GPIO.PWM(pin, frequency)
+
+
 def cleanup():
     GPIO = _get_gpio_module()
     GPIO.cleanup()

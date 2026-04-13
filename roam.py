@@ -82,24 +82,28 @@ if __name__ == "__main__":
     # Ensure trigger is low initially
     time.sleep(0.1)
 
-    logger.info("Starting continuous distance measurement (Press Ctrl+C to stop)...")
+    logger.info("Reading distance from each sensor once...")
 
     try:
-        while True:
-            # Check forward sensor
-            distance = checkSensor(TriggerPin, SensorForwardPin)
+        front_distance = _readDistance(TriggerPin, SensorForwardPin, "Front")
+        left_distance = _readDistance(TriggerPin, SensorLeftPin, "Left")
+        right_distance = _readDistance(TriggerPin, SensorRightPin, "Right")
 
-            if distance == -1:
-                logger.warning("Forward sensor: Timeout/Error")
-            else:
-                logger.info("Forward distance: %.2f cm", distance)
-            
-            time.sleep(0.1)  # Small delay between readings
-            
-            
+        logger.info(
+            "Front distance: %s",
+            "unavailable" if front_distance is None else f"{front_distance:.2f} cm",
+        )
+        logger.info(
+            "Left distance: %s",
+            "unavailable" if left_distance is None else f"{left_distance:.2f} cm",
+        )
+        logger.info(
+            "Right distance: %s",
+            "unavailable" if right_distance is None else f"{right_distance:.2f} cm",
+        )
 
-    except KeyboardInterrupt:
-        logger.info("Stopping measurements...")
+        direction = roam()
+        logger.info("Roam decision: %s", direction)
     finally:
         cleanup()
         logger.info("GPIO cleanup complete")

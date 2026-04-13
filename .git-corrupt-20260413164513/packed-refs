@@ -1,0 +1,5 @@
+# pack-refs with: peeled fully-peeled sorted 
+61d691c5c07c9c6140425b3702731f98624f3cf8 refs/remotes/origin/Motor-Control
+34dee03004066e2c77f56c7e020d99e0dfb59e4f refs/remotes/origin/Navigation
+61d691c5c07c9c6140425b3702731f98624f3cf8 refs/remotes/origin/Vision-system
+61d691c5c07c9c6140425b3702731f98624f3cf8 refs/remotes/origin/main

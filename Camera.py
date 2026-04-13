@@ -27,7 +27,24 @@ class CameraObject:
         self.warmup = warmup
 
         try:
-            self.picam = Picamera2()
+            camera_info = Picamera2.global_camera_info()
+            if not camera_info:
+                raise RuntimeError(
+                    'No cameras found. Ensure the Raspberry Pi camera is connected, enabled, and libcamera is configured correctly.'
+                )
+
+            last_exc = None
+            for info in camera_info:
+                camera_num = info.get('Num', 0)
+                try:
+                    self.picam = Picamera2(camera_num=camera_num)
+                    break
+                except Exception as exc:
+                    last_exc = exc
+
+            if self.picam is None:
+                raise last_exc or RuntimeError('Failed to initialize any Picamera2 camera')
+
             config = self.picam.create_still_configuration(main={'size': self.size})
             self.picam.configure(config)
             self.picam.start()
