@@ -1,5 +1,6 @@
 from roam import roam, setupRoam, cleanup
 from move import move
+from motor import Motor
 import time
 import sys
 #import RPi.GPIO as GPIO
@@ -8,16 +9,20 @@ from utils import configure_logging, is_raspberry_pi
 from Camera import CameraObject
 
 logger = logging.getLogger(__name__)
-left_pin = 0  # GPIO pin for left motor control
-right_pin = 0  # GPIO pin for right motor control
+left_forward_pin = 10
+left_reverse_pin = 15
+right_forward_pin = 23
+right_reverse_pin = 14
 
 def main():
     wait_time = 2  # Time to wait between movements
     logger.info("Starting tank control loop")
     setupRoam()  # Initialize GPIO pins for roaming sensors
-    # Initialize motors here if needed, e.g. motor_Left = Motor(left_pin), motor_Right = Motor(right_pin)
-    motor_Left = Motor("Left", left_pin)  # Placeholder for motor initialization
-    motor_Right = Motor("Right", right_pin)  # Placeholder for motor initialization
+
+    motor_Left = Motor("Left", left_forward_pin, left_reverse_pin)
+    motor_Right = Motor("Right", right_forward_pin, right_reverse_pin)
+    motor_Left.connect()
+    motor_Right.connect()
 
     camera = None
     try:
@@ -66,6 +71,8 @@ def main():
     finally:
         if camera is not None:
             camera.close()
+        motor_Left.disconnect()
+        motor_Right.disconnect()
 
 
 if __name__ == "__main__":
