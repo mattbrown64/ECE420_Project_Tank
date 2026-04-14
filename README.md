@@ -8,7 +8,7 @@
 ## Install (on Pi)
 ```bash
 sudo apt update
-sudo apt install -y python3-venv python3-pip python3-lgpio
+sudo apt install -y python3-venv python3-pip python3-lgpio alsa-utils mpg123
 
 cd /Users/mattbrown/Documents/Github/ECE420_Project_Tank
 python3 -m venv .venv
@@ -24,6 +24,15 @@ Defaults used by the app:
 - Left echo: `27`
 - Right echo: `22`
 - Threshold (cm): `5`
+
+## Background Music
+Place your music files in the `music/` directory with these names:
+- `Just Peachy.wav` (for friend detection / default)
+- `Careless Whisper.mp3` (for lover detection)
+- `ready for primetime.wav` (for enemy detection)
+- `thriller.wav` (for bigger enemy detection)
+
+Music transitions smoothly between detections with 1-second fade in/out.
 
 ## Run
 ```bash
