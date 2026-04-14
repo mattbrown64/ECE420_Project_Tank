@@ -6,7 +6,6 @@ import time
 
 
 def detect_qr_from_frame(frame):
-    """Detect QR codes in an OpenCV frame (BGR)."""
     if frame is None or frame.size == 0:
         return []
 
@@ -91,7 +90,6 @@ class CameraObject:
 
 
 def Capture(file_path='capture.jpg'):
-    """Legacy single-capture path (writes image to disk)."""
     camera = CameraObject()
     try:
         frame = camera.read_frame(save_path=file_path)
@@ -102,7 +100,6 @@ def Capture(file_path='capture.jpg'):
 
 
 def Detect(file_path='capture.jpg'):
-    """Detect QR codes in an image file."""
     img = cv2.imread(file_path)
     if img is None:
         raise FileNotFoundError(f'Cannot load image from "{file_path}"')

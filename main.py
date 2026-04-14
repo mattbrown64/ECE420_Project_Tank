@@ -7,6 +7,8 @@ import sys
 import logging
 from utils import configure_logging, is_raspberry_pi
 from Camera import CameraObject
+from Emotions import show_smiley, show_angry, show_heart_eyes
+from Music import play_background_music, stop_background_music
 
 logger = logging.getLogger(__name__)
 left_forward_pin = 10
@@ -42,8 +44,26 @@ def main():
             logger.debug("Camera detections: %s", detections)
             if detections:
                 print("Target Detected:", detections)
-                # Add your target-handling logic here.
+                # Map QR payload to emotion display.
+                normalized = [code.strip().lower() for code in detections]
+                if any(code in ("enemy!", "biggerenemy!") for code in normalized):
+                    show_angry()
+                    if "biggerenemy!" in normalized:
+                        play_background_music("bigger_enemy")
+                    else:
+                        play_background_music("enemy")
+                elif "lover!" in normalized:
+                    show_heart_eyes()
+                    play_background_music("lover")
+                elif "friend!" in normalized:
+                    show_smiley()
+                    play_background_music("friend")
+                else:
+                    # Fallback if detection text is unknown.
+                    show_smiley()
+                    stop_background_music()
             else:
+                play_background_music("friend")
                 direction = roam()
                 logger.debug("Roam decision: %s", direction)
                 match direction:
@@ -73,6 +93,7 @@ def main():
             camera.close()
         motor_Left.disconnect()
         motor_Right.disconnect()
+        stop_background_music()
 
 
 if __name__ == "__main__":
