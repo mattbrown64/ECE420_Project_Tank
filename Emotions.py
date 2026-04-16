@@ -1,6 +1,7 @@
 import RPi.GPIO as GPIO
 from RPLCD.gpio import CharLCD
 
+
 GPIO.setmode(GPIO.BCM)
 
 lcd = CharLCD(
@@ -22,6 +23,17 @@ SMILEY = [
     0b00000,
     0b00000,
 ]
+
+SMILEY = [
+    0b00000,
+    0b01010,
+    0b01010,
+    0b00000,
+    0b10001,
+    0b10001,
+    0b01110,
+    0b00000,
+ ]
 
 ANGRY = [
     0b00000,
@@ -83,6 +95,8 @@ setup_emoticons()
 if __name__ == '__main__':
     show_smiley()
     input('Press Enter for angry face...')
+    clear_display()
     show_angry()
     input('Press Enter for heart-eyes face...')
+    clear_display()
     show_heart_eyes()
