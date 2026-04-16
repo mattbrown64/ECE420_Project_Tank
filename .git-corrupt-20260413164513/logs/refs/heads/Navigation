@@ -1,4 +1,0 @@
-0000000000000000000000000000000000000000 34dee03004066e2c77f56c7e020d99e0dfb59e4f user <user@AutoTank.(none)> 1770746712 -0500	branch: Created from refs/remotes/origin/Navigation
-34dee03004066e2c77f56c7e020d99e0dfb59e4f fce0373bc357c481a57e3201bbf4c4eb224f9d56 mattbrown64 <mattbrown4404@gmail.com> 1770755805 -0500	commit: Proof of concept for navigation
-fce0373bc357c481a57e3201bbf4c4eb224f9d56 accf8e8d4187d15b447f983e051f75cd45c9416b mattbrown64 <mattbrown4404@gmail.com> 1774376607 -0400	pull: Fast-forward
-accf8e8d4187d15b447f983e051f75cd45c9416b 0fe331cdc8150090d8dbfe4d84d28628b13cb0f7 mattbrown64 <mattbrown4404@gmail.com> 1774546832 -0400	commit: Added Motor Skeleton Code
