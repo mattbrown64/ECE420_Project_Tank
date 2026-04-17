@@ -34,5 +34,6 @@ python main.py
 Stop with `Ctrl+C`.
 
 ## Notes
-- Movement logic in `move.py` is still a software stub and does not drive motors yet.
+- Movement logic is now handled in `motor.py` and the main control flow, not in a separate `move.py` stub.
 - This update focuses on Raspberry Pi runtime compatibility and sensor loop reliability.
+- For test environments without a Pi camera, set `CAMERA_TEST_IMAGE` to a saved image path before running `main.py`.

@@ -1,6 +1,7 @@
 
 import importlib
 import logging
+import os
 import time
 
 logger = logging.getLogger(__name__)
@@ -136,37 +137,80 @@ class Motor:
         )
         return 0
 
+TURN_360_MS = int(os.getenv("TURN_360_MS", "2000"))
+DRIVE_SPEED = float(os.getenv("DRIVE_SPEED", "1.0"))
+TURN_SPEED = float(os.getenv("TURN_SPEED", "1.0"))
+
+
 class MotorMovementControler:
-    def __init__(self, motor_Left: Motor, motor_Right: Motor):
+    def __init__(self, motor_Left: Motor, motor_Right: Motor, trigger_motor: Motor | None = None):
         self.motor_Left = motor_Left
         self.motor_Right = motor_Right
-        
-    def move(self, direction):
-        match direction:
-            case "Forward":
-                logger.info("Moving forward")
-                self.motor_Left.Move(1.0)
-                self.motor_Right.Move(1.0)
-                return 0
-            case "Left":
-                logger.info("Turning left")
-                self.motor_Left.Move(0.0)
-                self.motor_Right.Move(1.0)
-                return 0
-            case "Right":
-                logger.info("Turning right")
-                self.motor_Left.Move(1.0)
-                self.motor_Right.Move(0.0)
-                return 0
-            case "Reverse":
-                logger.info("Reversing")
-                self.motor_Left.Move(-1.0)
-                self.motor_Right.Move(-1.0)
-                return 0
-            case _:
-                logger.warning("Unknown direction: %s", direction)
-        return -1
-    
+        self.trigger_motor = trigger_motor
+        self._trigger_active = False
+
+    def _set_turn_motion(self, angle_deg: float) -> int:
+        if angle_deg == 0.0:
+            return 0
+
+        if angle_deg > 0:
+            logger.info("Turning right %.1f degrees", angle_deg)
+            self.motor_Left.Move(TURN_SPEED)
+            self.motor_Right.Move(-TURN_SPEED)
+        else:
+            logger.info("Turning left %.1f degrees", angle_deg)
+            self.motor_Left.Move(-TURN_SPEED)
+            self.motor_Right.Move(TURN_SPEED)
+        return 0
+
+    def _set_drive_motion(self, speed: float) -> int:
+        logger.info("Driving forward at speed %s", speed)
+        self.motor_Left.Move(speed)
+        self.motor_Right.Move(speed)
+        return 0
+
+    def _set_trigger_motor(self, enabled: bool) -> int:
+        if self.trigger_motor is None:
+            return 0
+
+        if enabled:
+            if not self._trigger_active:
+                logger.info("Starting trigger motor")
+                self.trigger_motor.Move(1.0)
+                self._trigger_active = True
+        else:
+            if self._trigger_active:
+                logger.info("Stopping trigger motor")
+                self.trigger_motor.Move(0.0)
+                self._trigger_active = False
+        return 0
+
+    def turn(self, angle_deg: float, trigger: bool = False) -> int:
+        if self._set_turn_motion(angle_deg) != 0:
+            return -1
+
+        self._set_trigger_motor(trigger)
+        duration = abs(angle_deg) / 360.0 * TURN_360_MS / 1000.0
+        time.sleep(max(0.0, duration))
+        self.stop()
+        return 0
+
+    def drive(self, duration_s: float, speed: float = DRIVE_SPEED, trigger: bool = False) -> int:
+        if self._set_drive_motion(speed) != 0:
+            return -1
+
+        self._set_trigger_motor(trigger)
+        time.sleep(max(0.0, duration_s))
+        self.stop()
+        return 0
+
+    def stop(self) -> int:
+        logger.info("Stopping motors")
+        self.motor_Left.Move(0.0)
+        self.motor_Right.Move(0.0)
+        self._set_trigger_motor(False)
+        return 0
+
     def manual_control(self, left_speed, right_speed):
         logger.info("Manual control: left_speed=%s right_speed=%s", left_speed, right_speed)
         self.motor_Left.Move(left_speed)

@@ -48,19 +48,21 @@ def _readDistance(trigger_pin, sensor_pin, label):
     return distance
 
 
-def roam():
+def roam_angle():
     front_distance = _readDistance(TriggerPin, SensorForwardPin, "Front")
     left_distance = _readDistance(TriggerPin, SensorLeftPin, "Left")
     right_distance = _readDistance(TriggerPin, SensorRightPin, "Right")
 
     if front_distance is not None and front_distance > THRESHOLD_DISTANCE:
-        return "Forward"
+        return 0.0
     elif left_distance is not None and left_distance > THRESHOLD_DISTANCE:
-        return "Left"
+        return -90.0
     elif right_distance is not None and right_distance > THRESHOLD_DISTANCE:
-        return "Right"
+        return 90.0
     else:
-        return "Reverse"
+        return 180.0
+
+roam = roam_angle
 
 def setupRoam():
     logger.info(

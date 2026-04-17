@@ -1,30 +1,82 @@
+import os
 import cv2
 import numpy as np
-from picamera2 import Picamera2
 from pyzbar import pyzbar
 import time
 
+try:
+    from picamera2 import Picamera2
+except ImportError:
+    Picamera2 = None
+
 
 def detect_qr_from_frame(frame):
-    """Detect QR codes in an OpenCV frame (BGR)."""
     if frame is None or frame.size == 0:
         return []
 
+    frame_height, frame_width = frame.shape[:2]
     decoded = pyzbar.decode(frame)
-    qr_strings = []
+    detections = []
     for barcode in decoded:
         if barcode.type != 'QRCODE':
             continue
-        qr_strings.append(barcode.data.decode('utf-8', errors='replace'))
 
-    return qr_strings
+        text = barcode.data.decode('utf-8', errors='replace')
+        rect = getattr(barcode, 'rect', None)
+        polygon = getattr(barcode, 'polygon', None)
+
+        if rect is not None:
+            rect_data = {
+                'left': getattr(rect, 'left', getattr(rect, 'x', 0)),
+                'top': getattr(rect, 'top', getattr(rect, 'y', 0)),
+                'width': getattr(rect, 'width', 0),
+                'height': getattr(rect, 'height', 0),
+            }
+            center_x = rect_data['left'] + rect_data['width'] / 2
+            center_y = rect_data['top'] + rect_data['height'] / 2
+            area = rect_data['width'] * rect_data['height']
+        else:
+            rect_data = None
+            center_x = None
+            center_y = None
+            area = None
+
+        if polygon is not None:
+            polygon_points = [(p.x, p.y) for p in polygon]
+        else:
+            polygon_points = []
+
+        detections.append({
+            'text': text,
+            'raw': text,
+            'rect': rect_data,
+            'polygon': polygon_points,
+            'center': {'x': center_x, 'y': center_y} if center_x is not None else None,
+            'frame_width': frame_width,
+            'frame_height': frame_height,
+            'area': area,
+            'area_ratio': area / (frame_width * frame_height) if area is not None and frame_width * frame_height > 0 else None,
+        })
+
+    return detections
 
 
 class CameraObject:
-    def __init__(self, size=(1280, 720), warmup=0.5):
+    def __init__(self, size=(1280, 720), warmup=0.5, image_path=None):
         self.picam = None
         self.size = size
         self.warmup = warmup
+        self.image_path = image_path
+
+        if self.image_path is not None:
+            if not os.path.isfile(self.image_path):
+                raise FileNotFoundError(f'Camera image file not found: {self.image_path}')
+            return
+
+        if Picamera2 is None:
+            raise RuntimeError(
+                'Picamera2 is unavailable in this environment. Use a test image via image_path or run on Raspberry Pi with camera support.'
+            )
 
         try:
             camera_info = Picamera2.global_camera_info()
@@ -54,6 +106,16 @@ class CameraObject:
             raise RuntimeError(f'Failed to initialize Camera: {e}')
 
     def read_frame(self, save_path=None):
+        if self.image_path is not None:
+            bgr = cv2.imread(self.image_path)
+            if bgr is None or bgr.size == 0:
+                raise RuntimeError(f'Failed to load image from {self.image_path}')
+            if save_path:
+                ok = cv2.imwrite(save_path, bgr)
+                if not ok:
+                    raise RuntimeError(f'Failed to write image to "{save_path}"')
+            return bgr
+
         if self.picam is None:
             raise RuntimeError('Camera is not initialized')
 
@@ -91,10 +153,9 @@ class CameraObject:
 
 
 def Capture(file_path='capture.jpg'):
-    """Legacy single-capture path (writes image to disk)."""
     camera = CameraObject()
     try:
-        frame = camera.read_frame(save_path=file_path)
+        camera.read_frame(save_path=file_path)
     finally:
         camera.close()
 
@@ -102,12 +163,19 @@ def Capture(file_path='capture.jpg'):
 
 
 def Detect(file_path='capture.jpg'):
-    """Detect QR codes in an image file."""
     img = cv2.imread(file_path)
     if img is None:
         raise FileNotFoundError(f'Cannot load image from "{file_path}"')
 
     return detect_qr_from_frame(img)
+
+
+def read_qr_from_file(image_path, save_path=None):
+    camera = CameraObject(image_path=image_path)
+    try:
+        return camera.read_qr(save_path=save_path)
+    finally:
+        camera.close()
 
 
 if __name__ == '__main__':
